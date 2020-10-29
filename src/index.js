@@ -19,4 +19,5 @@ class Mycomponents extends React.Component {
     return <div>{name}</div>;
   }
 }
+
 ReactDom.render(<Mycomponents/>, '#app');

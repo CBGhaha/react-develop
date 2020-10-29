@@ -13,17 +13,7 @@ const config = {
     historyApiFallback: {
       index: '/'
     },
-    https: true,
-    // proxy: {
-    //   '/uke-api': {
-    //     target: 'https://uke-gateway-test.zmaxis.com/', // https://uke-gateway-test.zmaxis.com/  https://youke.uat.zmops.cc/uke-api/ https://room.zmyouke.com/uke-api/
-    //     // ws: true,
-    //     changeOrigin: true,
-    //     pathRewrite: {
-    //       '/uke-api': ''
-    //     }
-    //   }
-    // }
+    https: true
   },
   //代码调试映射模式 (map文件) 用于追踪调试报错和源码位置
   devtool: 'cheap-module-source-map', //---开发环境适合
