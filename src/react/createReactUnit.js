@@ -40,6 +40,7 @@ class ReactNativeUnit extends Unit {
 }
 class ReactCompositeUnit extends Unit {
   getMarkUp(id) {
+    this.id = id;
     const { type: Component, props } = this._currentElement;
     const componentInstance = this._componentInstance = new Component(props);
     this._componentInstance._currentUnit = this;
@@ -53,8 +54,40 @@ class ReactCompositeUnit extends Unit {
     });
     return renderedUnitInstance.getMarkUp(id);
   }
-}
+  update(nextElement, partitialState) {
+    this._currentElement = nextElement || this._currentElement;
+    const nextState = Object.assign(this._componentInstance.state, partitialState);
+    const nextProps = this._currentElement.props;
+    // componentShouldUpdate生命周期
+    const shouldUpdate = this._componentInstance.componentShouldUpdate ? this._componentInstance.componentShouldUpdate(nextProps, nextState) : true;
+    this._componentInstance.state = nextState;
+    if (!shouldUpdate) return;
+    // 上次render的react元素
+    const preRenderedElement = this._renderedUnitInstance._currentElement ;
+    // 本次render的react元素
+    const nextRenderedElement = this._componentInstance.render();
+    if (shouleDeepCompare(preRenderedElement, nextRenderedElement)) {
+      nextRenderedElement.update(nextRenderedElement);
+      this._componentInstance.componentDidUpdade && this._componentInstance.componentDidUpdade();
+    } else {
+      this._renderedUnitInstance = createReactUnit(nextRenderedElement);
+      const markUp = this._renderedUnitInstance.getMarkUp(this.id);
+      $(`[react-id="${this.id}"]`).replaceWith(markUp);
+    }
 
+  }
+}
+function shouleDeepCompare(preRenderedElement, nextRenderedElement) {
+  if (preRenderedElement && nextRenderedElement) {
+    const preType = typeof preRenderedElement;
+    const nextType = typeof nextRenderedElement;
+    if ((preType === 'string' || preType === 'number') && (nextType === 'string' || nextType === 'number')) return true;
+    if ((preRenderedElement instanceof Element && nextRenderedElement instanceof Element) && preRenderedElement.type === nextRenderedElement.type) {
+      return true;
+    }
+  }
+  return false;
+}
 export default function createReactUnit(element) {
   if (typeof element === 'string' || typeof element === 'number') {
     return new ReactTextUnit(element);
