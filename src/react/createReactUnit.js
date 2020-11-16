@@ -11,6 +11,10 @@ class ReactTextUnit extends Unit {
     this.id = id;
     return `<span react-id="${id}">${this._currentElement}</span>`;
   }
+  update(nextRenderedElement) {
+    this._currentElement = nextRenderedElement;
+    $(`[react-id="${this.id}"]`).html(nextRenderedElement);
+  }
 }
 class ReactNativeUnit extends Unit {
   getMarkUp(id) {
@@ -22,7 +26,7 @@ class ReactNativeUnit extends Unit {
       // 事件
       if (/on[A-Z]/.test(propsItem)) {
         const eventName = propsItem.slice(2).toLowerCase();
-        $(document).on(eventName, props[propsItem]);
+        $(document).delegate(`[ react-id="${this.id}"]`, eventName, props[propsItem]);
       // 普通属性
       } else if (propsItem !== 'children') {
         startLabelStr += `${propsItem}="${props[propsItem]}"`;
@@ -37,16 +41,36 @@ class ReactNativeUnit extends Unit {
     const endLabelStr = `</${type}>`;
     return startLabelStr + '>' + contentStr + endLabelStr;
   }
+  update(nextRenderedElement) {
+    const preProps = this._currentElement.props;
+    const nextProps = nextRenderedElement.props;
+    this.updateDOMProperties(preProps, nextProps);
+  }
+  updateDOMProperties(preProps, nextProps) {
+    for (let propsName in preProps) {
+      if (!nextProps.hasOwwProperty(propsName)) {
+        $(`[ react-id="${this.id}"]`).removeAttr(propsName);
+      }
+    }
+  }
 }
 class ReactCompositeUnit extends Unit {
   getMarkUp(id) {
     this.id = id;
     const { type: Component, props } = this._currentElement;
+
+    /* ！！！————保存类组件的实例——————！ */
     const componentInstance = this._componentInstance = new Component(props);
+
+    /* ！！！————给类组件实例暴露Unit 以使组件更新时调用（update）—————— ！*/
     this._componentInstance._currentUnit = this;
+
+
     // 执行willMoumet
     if (componentInstance.componentWillMount) componentInstance.componentWillMount();
     let renderRes = componentInstance.render();
+
+    /* ！！！——— 保存render后element生成的Unit ——— ！*/
     const renderedUnitInstance = this._renderedUnitInstance = createReactUnit(renderRes);
     // componentDidMount函数加入到执行队列
     $(document).on('mount', ()=>{
@@ -55,6 +79,7 @@ class ReactCompositeUnit extends Unit {
     return renderedUnitInstance.getMarkUp(id);
   }
   update(nextElement, partitialState) {
+    /* ！！！————更新element—————— ！*/
     this._currentElement = nextElement || this._currentElement;
     const nextState = Object.assign(this._componentInstance.state, partitialState);
     const nextProps = this._currentElement.props;
@@ -67,7 +92,7 @@ class ReactCompositeUnit extends Unit {
     // 本次render的react元素
     const nextRenderedElement = this._componentInstance.render();
     if (shouleDeepCompare(preRenderedElement, nextRenderedElement)) {
-      nextRenderedElement.update(nextRenderedElement);
+      this._renderedUnitInstance.update(nextRenderedElement);
       this._componentInstance.componentDidUpdade && this._componentInstance.componentDidUpdade();
     } else {
       this._renderedUnitInstance = createReactUnit(nextRenderedElement);

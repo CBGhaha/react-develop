@@ -4,8 +4,13 @@ class Mycomponents extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      name: 'bang'
+      number: 1
     };
+    setInterval(()=>{
+      this.setState({
+        number: this.state.number + 1
+      });
+    }, 1000);
   }
   componentWillMount() {
     console.log('componentWillMount');
@@ -15,8 +20,8 @@ class Mycomponents extends React.Component {
   }
   render() {
     console.log('render');
-    const { name } = this.state;
-    return <div>{name}</div>;
+    const { number } = this.state;
+    return number;
   }
 }
 
