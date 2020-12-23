@@ -21,7 +21,7 @@ class Mycomponents extends React.Component {
   render() {
     console.log('render');
     const { number } = this.state;
-    return number;
+    return <div className={number % 2 === 0 ? 'ji' : 'ou'}>{ number }</div>;
   }
 }
 

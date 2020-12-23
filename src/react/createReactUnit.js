@@ -26,16 +26,18 @@ class ReactNativeUnit extends Unit {
       // 事件
       if (/on[A-Z]/.test(propsItem)) {
         const eventName = propsItem.slice(2).toLowerCase();
-        $(document).delegate(`[ react-id="${this.id}"]`, eventName, props[propsItem]);
+        $(document).delegate(`[react-id="${this.id}"]`, eventName, props[propsItem]);
+      } else if (propsItem === 'className') {
+        startLabelStr += ` class="${props[propsItem]}" `;
       // 普通属性
-      } else if (propsItem !== 'children') {
-        startLabelStr += `${propsItem}="${props[propsItem]}"`;
-      // 子组件
-      } else {
+      } else if (propsItem === 'children') {
         const childrenElement = props[propsItem];
         childrenElement.forEach((ele, index)=>{
           contentStr += createReactUnit(ele).getMarkUp(`${id}-${index}`);
         });
+      } else {
+        startLabelStr += ` ${propsItem}="${props[propsItem]}" `;
+      // 子组件
       }
     }
     const endLabelStr = `</${type}>`;
@@ -45,11 +47,31 @@ class ReactNativeUnit extends Unit {
     const preProps = this._currentElement.props;
     const nextProps = nextRenderedElement.props;
     this.updateDOMProperties(preProps, nextProps);
+    this.updateDOMChildren(nextProps.children);
+  }
+  updateDOMChildren(newChildrenElements) {
+    this.diff(diffQueue, newChildrenElements);
   }
   updateDOMProperties(preProps, nextProps) {
     for (let propsName in preProps) {
-      if (!nextProps.hasOwwProperty(propsName)) {
-        $(`[ react-id="${this.id}"]`).removeAttr(propsName);
+      if (!nextProps.hasOwnProperty(propsName)) {
+        $(`[react-id="${this.id}"]`).removeAttr(propsName);
+      }
+      if (/on[A-Z]/.test(propsName)) {
+        $(document).undelegate(`[ react-id="${this.id}"]`, eventName);
+      }
+    }
+    for (let propsName in nextProps) {
+      if (/on[A-Z]/.test(propsName)) {
+        const eventName = propsName.slice(2).toLowerCase();
+        $(document).delegate(`[react-id="${this.id}"]`, eventName, nextProps[propsName]);
+      } else if (propsName === 'className') {
+        $(`[react-id="${this.id}"]`)[0].className = nextProps[propsName];
+      // 普通属性
+      } else if (propsName = 'children') {
+        //
+      } else {
+        $(`[react-id="${this.id}"]`).prop(propsName, nextProps[propsName]);
       }
     }
   }
