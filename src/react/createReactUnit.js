@@ -22,6 +22,7 @@ class ReactNativeUnit extends Unit {
     const { type, props } = this._currentElement;
     let startLabelStr = `<${type} react-id="${id}"`;
     let contentStr = '';
+    this._renderedChildrenUnits = [];
     for (let propsItem in props) {
       // 事件
       if (/on[A-Z]/.test(propsItem)) {
@@ -33,7 +34,9 @@ class ReactNativeUnit extends Unit {
       } else if (propsItem === 'children') {
         const childrenElement = props[propsItem];
         childrenElement.forEach((ele, index)=>{
-          contentStr += createReactUnit(ele).getMarkUp(`${id}-${index}`);
+          const childUnit = createReactUnit(ele);
+          this._renderedChildrenUnits.push(childUnit);
+          contentStr += childUnit.getMarkUp(`${id}-${index}`);
         });
       } else {
         startLabelStr += ` ${propsItem}="${props[propsItem]}" `;
@@ -47,10 +50,38 @@ class ReactNativeUnit extends Unit {
     const preProps = this._currentElement.props;
     const nextProps = nextRenderedElement.props;
     this.updateDOMProperties(preProps, nextProps);
-    this.updateDOMChildren(nextProps.children);
+    if (nextProps.children) this.updateDOMChildren(nextProps.children);
   }
   updateDOMChildren(newChildrenElements) {
     this.diff(diffQueue, newChildrenElements);
+  }
+  diff(diffQueqe, newChildrenELements) {
+    let oldChildrenUnitMap = this.getOldChildrenMap(this._renderedChildrenUnits);
+  }
+  getNewChildren(oldChildrenUnitMap, newChildrenElements) {
+    let newChildren = [];
+    newChildrenElements.forEach((newElement, index)=>{
+      let newKey = (newElement.props && newElement.props.key) || `${index}`;
+      let oldUnit = oldChildrenUnitMap[newKey];
+      let oldElement = oldUnit && oldUnit._currentElement;
+      if (shouldDeepCompare(oldElement, newElement)) {
+        oldUnit.update(oldUnit);
+        newChildren.push(oldUnit);
+      } else {
+        const nextUnit = createReactUnit(newElement);
+        newChildren.push(nextUnit);
+      }
+    });
+    return newChildren;
+  }
+  getOldChildrenMap(renderedChildrenUnits = []) {
+    let map = {};
+    for (let i in renderedChildrenUnits) {
+      const unit = renderedChildrenUnits[i];
+      const key = (unit._currentElement.props && unit._currentElement.props.key) || `${i}`;
+      map[key] = unit;
+    }
+    return map;
   }
   updateDOMProperties(preProps, nextProps) {
     for (let propsName in preProps) {
