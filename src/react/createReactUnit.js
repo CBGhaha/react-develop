@@ -1,6 +1,12 @@
 import $ from 'jquery';
 import { Element } from './createElement';
-
+let diffQueue = [];
+let updateDepth = 0;
+let patchTypes = {
+  MOVE: 'move',
+  INSERT: 'insert',
+  DELETE: 'delete'
+};
 class Unit {
   constructor(element) {
     this._currentElement = element;
@@ -36,6 +42,7 @@ class ReactNativeUnit extends Unit {
         childrenElement.forEach((ele, index)=>{
           const childUnit = createReactUnit(ele);
           this._renderedChildrenUnits.push(childUnit);
+          childUnit._mountIndex = index;
           contentStr += childUnit.getMarkUp(`${id}-${index}`);
         });
       } else {
@@ -53,26 +60,122 @@ class ReactNativeUnit extends Unit {
     if (nextProps.children) this.updateDOMChildren(nextProps.children);
   }
   updateDOMChildren(newChildrenElements) {
+    updateDepth++;
     this.diff(diffQueue, newChildrenElements);
+    updateDepth--;
+    //
+    if (updateDepth === 0) {
+      console.info('diffQueue:', diffQueue);
+      this.patch(diffQueue);
+      diffQueue = [];
+    }
+  }
+  patch(diffQueue) {
+    let deleteChildren = [];
+    let deleteMap = {};
+    for (let i = 0;i < diffQueue.length;i++) {
+      const difference = diffQueue[i];
+      const { type, fromIndex, parentNode } = difference;
+      if (type === patchTypes.MOVE || type === patchTypes.DELETE) {
+        let oldNode = $(parentNode.children().get(fromIndex));
+        deleteMap[fromIndex] = oldNode;
+        deleteChildren.push(oldNode);
+      }
+    }
+    $.each(deleteChildren, (index, child)=>{$(child).remove();});
+    for (let key in deleteMap) {
+      const difference = diffQueue[key];
+      const { type, toIndex, parentNode, markUp } = difference;
+      if (type === patchTypes.INSERT) {
+        this.insertChildAt(parentNode, toIndex, $(markUp));
+      } else {
+        this.insertChildAt(parentNode, toIndex, deleteMap[key]);
+      }
+
+    }
+  }
+  insertChildAt(parentNode, index, newNode) {
+    let oldNode = parentNode.children().get(index);
+    oldNode ? oldNode.insertBefore(oldNode) : newNode.appendTo(parentNode);
   }
   diff(diffQueqe, newChildrenELements) {
+
     let oldChildrenUnitMap = this.getOldChildrenMap(this._renderedChildrenUnits);
+    let [newChildrenUnitMap, newChildrenUnits] = this.getNewChildren(oldChildrenUnitMap, newChildrenELements);
+    this._renderedChildrenUnits = newChildrenUnits;
+    let pointerIndex = 0;
+    for (let i = 0;i < newChildrenUnits.length;i++) {
+      const newUnit = newChildrenUnits[i];
+      const newkey = (newUnit._currentElement.props && newUnit._currentElement.props.key) || i;
+      const oldUnit = oldChildrenUnitMap[newkey];
+      if (oldUnit === newUnit) {
+        // 需要做位移
+        if (oldUnit._mountIndex < pointerIndex) {
+          diffQueqe.push({
+            parentId: this.id,
+            parentNode: $(`[react-id="${this.id}"]`),
+            type: patchTypes.MOVE,
+            fromIndex: oldUnit._mountIndex,
+            toIndex: i
+          });
+        }
+        pointerIndex = Math.max(pointerIndex, oldUnit._mountIndex);
+      } else {
+        // 同key但未复用，也删除
+        if (oldUnit) {
+          diffQueqe.push({
+            parentId: this.id,
+            parentNode: $(`[react-id="${this.id}"]`),
+            type: patchTypes.DELETE,
+            fromIndex: oldUnit._mountIndex
+          });
+          // 取消事件委托
+          $(document).undelegate(`[ react-id="${oldUnit.id}"]`);
+        }
+        diffQueqe.push({
+          parentId: this.id,
+          parentNode: $(`[react-id="${this.id}"]`),
+          type: patchTypes.INSERT,
+          toIndex: i,
+          markUp: newUnit.getMarkUp(`${this.id}-${i}`)
+        });
+      }
+      newUnit._mountIndex = i;
+    }
+    // render后不存在的旧key 删除
+    for (let oldKey in oldChildrenUnitMap) {
+      if (!newChildrenUnitMap.hasOwnProperty(oldKey)) {
+        const oldUnit = oldChildrenUnitMap[oldKey];
+        diffQueqe.push({
+          parentId: this.id,
+          parentNode: $(`[react-id="${this.id}"]`),
+          type: patchTypes.DELETE,
+          fromIndex: oldUnit._mountIndex
+        });
+        // 取消事件委托
+        $(document).undelegate(`[ react-id="${oldUnit.id}"]`);
+      }
+    }
   }
   getNewChildren(oldChildrenUnitMap, newChildrenElements) {
     let newChildren = [];
+    let newChildrenUnitMap = {};
     newChildrenElements.forEach((newElement, index)=>{
       let newKey = (newElement.props && newElement.props.key) || `${index}`;
       let oldUnit = oldChildrenUnitMap[newKey];
       let oldElement = oldUnit && oldUnit._currentElement;
       if (shouldDeepCompare(oldElement, newElement)) {
-        oldUnit.update(oldUnit);
+        oldUnit.update(newElement);
         newChildren.push(oldUnit);
+        newChildrenUnitMap[newKey] = oldUnit;
       } else {
         const nextUnit = createReactUnit(newElement);
         newChildren.push(nextUnit);
+        newChildrenUnitMap[newKey] = nextUnit;
       }
     });
-    return newChildren;
+
+    return [newChildrenUnitMap, newChildren];
   }
   getOldChildrenMap(renderedChildrenUnits = []) {
     let map = {};
@@ -144,7 +247,7 @@ class ReactCompositeUnit extends Unit {
     const preRenderedElement = this._renderedUnitInstance._currentElement ;
     // 本次render的react元素
     const nextRenderedElement = this._componentInstance.render();
-    if (shouleDeepCompare(preRenderedElement, nextRenderedElement)) {
+    if (shouldDeepCompare(preRenderedElement, nextRenderedElement)) {
       this._renderedUnitInstance.update(nextRenderedElement);
       this._componentInstance.componentDidUpdade && this._componentInstance.componentDidUpdade();
     } else {
@@ -155,7 +258,7 @@ class ReactCompositeUnit extends Unit {
 
   }
 }
-function shouleDeepCompare(preRenderedElement, nextRenderedElement) {
+function shouldDeepCompare(preRenderedElement, nextRenderedElement) {
   if (preRenderedElement && nextRenderedElement) {
     const preType = typeof preRenderedElement;
     const nextType = typeof nextRenderedElement;
