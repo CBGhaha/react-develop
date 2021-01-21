@@ -73,30 +73,36 @@ class ReactNativeUnit extends Unit {
   patch(diffQueue) {
     let deleteChildren = [];
     let deleteMap = {};
+    // 先删除所有需要delete和remove的节点
     for (let i = 0;i < diffQueue.length;i++) {
       const difference = diffQueue[i];
       const { type, fromIndex, parentNode } = difference;
       if (type === patchTypes.MOVE || type === patchTypes.DELETE) {
         let oldNode = $(parentNode.children().get(fromIndex));
-        deleteMap[fromIndex] = oldNode;
+        deleteMap[i] = oldNode;
         deleteChildren.push(oldNode);
       }
     }
     $.each(deleteChildren, (index, child)=>{$(child).remove();});
-    for (let key in deleteMap) {
-      const difference = diffQueue[key];
+    // 开始插入需要插入的节点
+    for (let i = 0;i < diffQueue.length;i++) {
+      const difference = diffQueue[i];
       const { type, toIndex, parentNode, markUp } = difference;
-      if (type === patchTypes.INSERT) {
-        this.insertChildAt(parentNode, toIndex, $(markUp));
-      } else {
-        this.insertChildAt(parentNode, toIndex, deleteMap[key]);
+      let oldNode;
+      switch (type) {
+        case patchTypes.INSERT:oldNode = $(markUp);break;
+        case patchTypes.MOVE:oldNode = deleteMap[i];break;
+        default:break;
       }
-
+      if (oldNode) {
+        this.insertChildAt(parentNode, toIndex, oldNode);
+      }
     }
   }
   insertChildAt(parentNode, index, newNode) {
     let oldNode = parentNode.children().get(index);
-    oldNode ? oldNode.insertBefore(oldNode) : newNode.appendTo(parentNode);
+    console.log('insertChildAt:', parentNode, oldNode, newNode);
+    oldNode ? oldNode.insertBefore(newNode) : newNode.appendTo(parentNode);
   }
   diff(diffQueqe, newChildrenELements) {
 
