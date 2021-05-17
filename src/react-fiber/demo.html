@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+<body>
+  
+</body>
+</html>
+<script>
+  const virtualDomObj = {
+    name: 'dom',
+    children: [
+      {
+        name: 'dom1',
+        children: [
+          {
+            name: 'dom1-1'
+          }
+        ]
+      },
+      {
+        name: 'dom2',
+        children: [
+          {
+            name: 'dom2-1'
+          },
+          {
+            name: 'dom2-2'
+          }
+        ]
+      }
+    ]
+  };
+  
+  const rootFiber = {
+    stateNode: 'root',
+    childrenDom: [
+      virtualDomObj
+    ]
+  };
+  let nextUnitOfWork = rootFiber;
+
+  function workLoop() {
+    if (nextUnitOfWork) {
+      console.log('nextUnitOfWork:', nextUnitOfWork);
+      nextUnitOfWork = performUnitOfWork(nextUnitOfWork);
+    } else {
+      console.log('调度完成：', rootFiber);
+    }
+
+  }
+
+  function performUnitOfWork(currentFiber) {
+    beginWork(currentFiber);
+    if (currentFiber.child) {
+      return currentFiber.child;
+    }
+    let $currentFiber = currentFiber;
+    while ($currentFiber) {
+      compeleteUnitWork($currentFiber);
+      if ($currentFiber .sibling) return $currentFiber.sibling;
+      $currentFiber = $currentFiber.return;
+    }
+
+  }
+
+  function beginWork(currentFiber) {
+    if (!currentFiber.stateNode) {
+      currentFiber.stateNode = currentFiber.name;
+    }
+    reconcileChildren(currentFiber);
+  
+  }
+
+  function compeleteUnitWork(currentFiber) {
+    const returnFiber = currentFiber.return;
+    if (returnFiber) {
+  
+      if (!returnFiber.firstEffect) {
+        returnFiber.firstEffect = currentFiber.firstEffect;
+      }
+      if (returnFiber.lastEffect) {
+        returnFiber.lastEffect.nextEffect = currentFiber.lastEffect;
+      }
+
+      if (currentFiber.effectTag) {
+        if (!returnFiber.firstEffect) {
+          returnFiber.firstEffect = currentFiber;
+        }
+        if (returnFiber.lastEffect) {
+          returnFiber.lastEffect.nextEffect = currentFiber;
+        }
+        returnFiber.lastEffect = currentFiber;
+
+      }
+    }
+  
+
+  }
+  function reconcileChildren(currentFiber) {
+    if (!currentFiber.childrenDom) return;
+    let preSibling;
+    currentFiber.childrenDom.forEach((childDom, index) => {
+      const newFiber = {
+        stateNode: null,
+        childrenDom: childDom.children,
+        name: childDom.name,
+        return: currentFiber,
+        effectTag: 'createNode'
+      };
+      if (index > 0) {
+        preSibling.sibling = newFiber;
+      } else {
+        currentFiber.child = newFiber;
+      }
+      preSibling = newFiber;
+    });
+  }
+
+
+  setInterval(workLoop, 1000);
+
+  //
+</script>
