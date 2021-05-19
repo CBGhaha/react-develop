@@ -1,6 +1,6 @@
 
 import { TAG_ROOT } from './constant';
-import scheduleRoot from './schedule';
+import scheduleRoot from './scheduler';
 // render是吧一个元素渲染到容器内部
 export function render(element, container) {
   let rootFiber = {

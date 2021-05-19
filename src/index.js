@@ -15,9 +15,6 @@ class Mycomponents extends React.Component {
 
     }, 1000);
   }
-  componentWillMount() {
-    console.log('componentWillMount');
-  }
   componentDidMount() {
     console.log('componentDidMount');
   }

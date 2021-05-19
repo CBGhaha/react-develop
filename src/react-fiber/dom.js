@@ -1,4 +1,4 @@
-import { TAG_ROOT, ELEMENT_TEXT, TAG_HOST, TAG_TEXT, PLACEMENT } from './constant';
+import { TAG_HOST, TAG_TEXT } from './constant';
 
 
 // 根据fiber创建真实dom
