@@ -6,7 +6,7 @@ export class Update {
 export class UpdateQueue {
   constructor() {
     this.firstUpdate = null;
-    this.lastUpdate - null;
+    this.lastUpdate = null;
   }
   enqueueUpdate(update) {
     if (this.lastUpdate === null) {

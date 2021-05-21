@@ -1,18 +1,20 @@
 // 从根节点开始渲染 和调度
 /**
+ * 当有更新出现，React会生成一个工作中的Fiber树，并对工作中Fiber树上每一个Fiber节点进行计算和diff，完成计算工作（React称之为渲染步骤）之后，再更新DOM（提交步骤）。
  * 两个阶段
  * diff阶段 对比新旧的虚拟DOM进行增量更新或创建
  * 这个阶段比较花时间，可以对任务拆分，中断和继续
  * commit阶段，进行DOM更新创建阶段，不可中断
 */
-import { TAG_ROOT, ELEMENT_TEXT, TAG_HOST, TAG_TEXT, TAG_CLASS, PLACEMENT, DELETION, UPDATE } from './constant';
+import { TAG_ROOT, ELEMENT_TEXT, TAG_HOST, TAG_TEXT, TAG_CLASS, PLACEMENT, DELETION, UPDATE, TAG_FUNCTION_COMPONENT } from './constant';
 import createDOM, { updateDom } from './dom';
-import { UpdateQueue } from './updateQueue';
+import { Update, UpdateQueue } from './updateQueue';
 let nextUnitOfWork = null; // 下个调度任务
 let workInProgressRoot = null; // 此次更新后新的fiber树
 let currentRoot = null; // 当前页面中真实dom对应的fiber树
 let deletions = []; // 被删除的fiber
-
+let workInProgressFiber = null; // 正在工作中的fiber
+let hookIndex = 0; // hooks索引 源码中不是通过索引来获取当前正在执行的hooks的 而是fiber的hooks是一个单向链表结构 执行完一个hook后,将全局变量workInProgressHook指向hook
 
 export default function scheduleRoot(rootFiber) {
   if (currentRoot && currentRoot.alternate) { // 第二次之后的更新
@@ -89,8 +91,19 @@ function beginWork(currentFiber) {
     updateHost(currentFiber);
   } else if (currentFiber.tag === TAG_CLASS) {
     updateClassComponent(currentFiber);
+  } else if (currentFiber.tag === TAG_FUNCTION_COMPONENT) {
+    updateFunctionComponent(currentFiber);
   }
 
+}
+function updateFunctionComponent(currentFiber) {
+  workInProgressFiber = currentFiber;
+  hookIndex = 0;
+  workInProgressFiber.hooks = [];
+  const newElement = currentFiber.type(currentFiber.props);
+  const newChildren = [newElement];
+  // 调度
+  reconcileChildren(currentFiber, newChildren);
 }
 
 function updateClassComponent(currentFiber) {
@@ -164,6 +177,8 @@ function reconcileChildren(currentFiber, newChildren) {
           tag = TAG_HOST;
         } else if (typeof newChild.type === 'function' && newChild.type.prototype.isReactComponent) {
           tag = TAG_CLASS;
+        } else if (typeof newChild.type === 'function' && !newChild.type.prototype.isReactComponent) {
+          tag = TAG_FUNCTION_COMPONENT;
         }
         newFiber = {
           tag, // fiber类型
@@ -287,4 +302,38 @@ function commitDeletion(currentFiber, returnDom) {
     commitDeletion(currentFiber.child, returnDom);
   }
 }
+/**
+    workInProgressFiber = currentFiber;
+    hookIndex = 0;
+    workInProgressFiber.hooks = [];
+ *
+ *
+*/
 
+export function useReducer(reducer, initialValue) {
+  //
+  let currentHook = workInProgressFiber && workInProgressFiber.alternate && workInProgressFiber.alternate.hooks && workInProgressFiber.alternate.hooks[hookIndex];
+  // true => workInProgressFibe为新创建并第一次render，至少是第二次render，直接拿取第一次render创建的hooks
+  if (currentHook) {
+    // 每次render时执行更新链表
+    currentHook.state = currentHook.updateQueue.forceUpdates(currentHook.state);
+  // false => workInProgressFiber为新创建 为其创建新的hooks
+  } else {
+    currentHook = {
+      state: initialValue,
+      updateQueue: new UpdateQueue()
+    };
+  }
+  // 调用dispatch时会向更新链表塞入一个更新
+  const dispatch = action=>{
+    let payload = reducer ? reducer(currentHook.state, action) : action;
+    currentHook.updateQueue.enqueueUpdate(
+      new Update(payload)
+    );
+    scheduleRoot();
+  };
+  workInProgressFiber.hooks[hookIndex] = currentHook;
+  hookIndex++;
+  return [currentHook.state, dispatch];
+
+}

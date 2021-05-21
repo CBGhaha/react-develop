@@ -10,6 +10,7 @@ export const TAG_TEXT = Symbol.for('TAG_TEXT');
 
 export const TAG_CLASS = Symbol.for('TAG_CLASS');
 
+export const TAG_FUNCTION_COMPONENT = Symbol.for('TAG_FUNCTION_COMPONENT');
 // 插入节点
 export const PLACEMENT = Symbol.for('PLACEMENT');
 // 更新节点
