@@ -1,11 +1,16 @@
 const path = require('path');
+const webpack = require('webpack');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const CopyPlugin = require('copy-webpack-plugin');
 const Dotenv = require('dotenv-webpack');
 
+let entryDir = '../src/react-fiber';
+if (process.env.target === 'debug') {
+  entryDir = '../src/debug';
+}
 const config = {
   entry: {
-    main: ['babel-polyfill', path.resolve(__dirname, '../src/react-fiber')] //项目的主入口
+    main: ['babel-polyfill', path.resolve(__dirname, entryDir)] //项目的主入口
     //代码分离---提取公共库
     // vendor: ['react', 'react-router-dom', 'react-dom']
   },
@@ -69,7 +74,14 @@ const config = {
         to: path.resolve('./dist/'),
         flatten: true
       }
-    ])
+    ]),
+    new webpack.DefinePlugin({
+      '__DEV__': false,
+      '__PROFILE__': true,
+      '__UMD__': true,
+      '__EXPERIMENTAL__': true,
+      '__VARIANT__': false
+    })
   ],
 
   target: 'web',

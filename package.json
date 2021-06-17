@@ -9,7 +9,8 @@
     "pro": "cross-env BUILD_ENV=production npm run build",
     "fat": "cross-env BUILD_ENV=fat npm run build",
     "uat": "cross-env BUILD_ENV=uat npm run build",
-    "dev": "cross-env BUILD_ENV=development webpack-dev-server --config ./build/webpack.dev.config.js --devtool eval --progress --colors"
+    "dev": "cross-env BUILD_ENV=development webpack-dev-server --config ./build/webpack.dev.config.js --devtool eval --progress --colors",
+    "debug": "cross-env BUILD_ENV=development cross-env target=debug webpack-dev-server --config ./build/webpack.dev.config.js --devtool eval --progress --colors"
   },
   "author": "",
   "license": "ISC",
