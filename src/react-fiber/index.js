@@ -1,5 +1,13 @@
-import React from './react';
-import ReactDom from './react-dom';
+// import React from './react';
+// import ReactDom from './react-dom';
+
+import * as React from '../../react-17.0.2/packages/react';
+import * as ReactDOM from '../../react-17.0.2/packages/react-dom';
+
+// import React from '../../react-17.0.2/packages/react';
+// import ReactDom from '../../react-17.0.2/packages/react-dom';
+// import React from '../../react-17.0.2/build/node_modules/react';
+// import ReactDom from '../../react-17.0.2/build/node_modules/react-dom';
 const { useReducer, useState } = React;
 
 function reducer(state, action) {

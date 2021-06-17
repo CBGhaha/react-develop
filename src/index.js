@@ -1,5 +1,7 @@
 import React, { ReactDom } from './react/React';
 
+// { ReactDom }
+
 class Mycomponents extends React.Component {
   constructor(props) {
     super(props);
