@@ -7,24 +7,24 @@
  * @flow
  */
 
-import type {FiberRoot, SuspenseHydrationCallbacks} from './ReactInternalTypes';
-import type {RootTag} from './ReactRootTags';
+import type { FiberRoot, SuspenseHydrationCallbacks } from './ReactInternalTypes';
+import type { RootTag } from './ReactRootTags';
 
-import {noTimeout, supportsHydration} from './ReactFiberHostConfig';
-import {createHostRootFiber} from './ReactFiber.old';
+import { noTimeout, supportsHydration } from './ReactFiberHostConfig';
+import { createHostRootFiber } from './ReactFiber.old';
 import {
   NoLanes,
   NoLanePriority,
   NoTimestamp,
-  createLaneMap,
+  createLaneMap
 } from './ReactFiberLane';
 import {
   enableSchedulerTracing,
-  enableSuspenseCallback,
+  enableSuspenseCallback
 } from 'shared/ReactFeatureFlags';
-import {unstable_getThreadID} from 'scheduler/tracing';
-import {initializeUpdateQueue} from './ReactUpdateQueue.old';
-import {LegacyRoot, BlockingRoot, ConcurrentRoot} from './ReactRootTags';
+import { unstable_getThreadID } from 'scheduler/tracing';
+import { initializeUpdateQueue } from './ReactUpdateQueue.old';
+import { LegacyRoot, BlockingRoot, ConcurrentRoot } from './ReactRootTags';
 
 function FiberRootNode(containerInfo, tag, hydrate) {
   this.tag = tag;
@@ -96,7 +96,6 @@ export function createFiberRoot(
   const uninitializedFiber = createHostRootFiber(tag);
   root.current = uninitializedFiber;
   uninitializedFiber.stateNode = root;
-
   initializeUpdateQueue(uninitializedFiber);
 
   return root;

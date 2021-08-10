@@ -7,21 +7,21 @@
  * @flow
  */
 
-import type {Container} from './ReactDOMHostConfig';
-import type {RootType} from './ReactDOMRoot';
-import type {ReactNodeList} from 'shared/ReactTypes';
+import type { Container } from './ReactDOMHostConfig';
+import type { RootType } from './ReactDOMRoot';
+import type { ReactNodeList } from 'shared/ReactTypes';
 
 import {
   getInstanceFromNode,
   isContainerMarkedAsRoot,
-  unmarkContainerAsRoot,
+  unmarkContainerAsRoot
 } from './ReactDOMComponentTree';
-import {createLegacyRoot, isValidContainer} from './ReactDOMRoot';
-import {ROOT_ATTRIBUTE_NAME} from '../shared/DOMProperty';
+import { createLegacyRoot, isValidContainer } from './ReactDOMRoot';
+import { ROOT_ATTRIBUTE_NAME } from '../shared/DOMProperty';
 import {
   DOCUMENT_NODE,
   ELEMENT_NODE,
-  COMMENT_NODE,
+  COMMENT_NODE
 } from '../shared/HTMLNodeType';
 
 import {
@@ -30,12 +30,12 @@ import {
   unbatchedUpdates,
   getPublicRootInstance,
   findHostInstance,
-  findHostInstanceWithWarning,
+  findHostInstanceWithWarning
 } from 'react-reconciler/src/ReactFiberReconciler';
 import getComponentName from 'shared/getComponentName';
 import invariant from 'shared/invariant';
 import ReactSharedInternals from 'shared/ReactSharedInternals';
-import {has as hasInstance} from 'shared/ReactInstanceMap';
+import { has as hasInstance } from 'shared/ReactInstanceMap';
 
 const ReactCurrentOwner = ReactSharedInternals.ReactCurrentOwner;
 
@@ -151,11 +151,11 @@ function legacyCreateRootFromDOMContainer(
 
   return createLegacyRoot(
     container,
-    shouldHydrate
-      ? {
-          hydrate: true,
-        }
-      : undefined,
+    shouldHydrate ?
+      {
+        hydrate: true
+      } :
+      undefined,
   );
 }
 
@@ -194,6 +194,7 @@ function legacyRenderSubtreeIntoContainer(
       container,
       forceHydrate,
     );
+    // debugger;
     fiberRoot = root._internalRoot;
     if (typeof callback === 'function') {
       const originalCallback = callback;
@@ -207,6 +208,7 @@ function legacyRenderSubtreeIntoContainer(
       updateContainer(children, fiberRoot, parentComponent, callback);
     });
   } else {
+    // debugger;
     fiberRoot = root._internalRoot;
     if (typeof callback === 'function') {
       const originalCallback = callback;
@@ -289,6 +291,7 @@ export function render(
   container: Container,
   callback: ?Function,
 ) {
+  // debugger;
   invariant(
     isValidContainer(container),
     'Target container is not a DOM element.',
@@ -361,7 +364,7 @@ export function unmountComponentAtNode(container: Container) {
       const renderedByDifferentReact = rootEl && !getInstanceFromNode(rootEl);
       if (renderedByDifferentReact) {
         console.error(
-          "unmountComponentAtNode(): The node you're attempting to unmount " +
+          'unmountComponentAtNode(): The node you\'re attempting to unmount ' +
             'was rendered by another copy of React.',
         );
       }
@@ -391,12 +394,12 @@ export function unmountComponentAtNode(container: Container) {
 
       if (hasNonRootReactChild) {
         console.error(
-          "unmountComponentAtNode(): The node you're attempting to unmount " +
+          'unmountComponentAtNode(): The node you\'re attempting to unmount ' +
             'was rendered by React and is not a top-level container. %s',
-          isContainerReactRoot
-            ? 'You may have accidentally passed in a React root node instead ' +
-                'of its container.'
-            : 'Instead, have the parent component update its state and ' +
+          isContainerReactRoot ?
+            'You may have accidentally passed in a React root node instead ' +
+                'of its container.' :
+            'Instead, have the parent component update its state and ' +
                 'rerender in order to remove this component.',
         );
       }

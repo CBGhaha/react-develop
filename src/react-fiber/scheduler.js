@@ -64,16 +64,16 @@ function performUnitOfWork(currentFiber) {
   if (currentFiber.child) {
     return currentFiber.child; // 返回当前fiber的子fiber作为下一个任务执行
   }
-  // 如果没有子fiber 说明这个fiber已经遍历完成（其所有字节点已经创建完成）
+  // 如果没有子fiber 说明这个fiber及其以下的节点都已经遍历完成（其所有字节点已经创建完成）
   let $currentFiber = currentFiber;
   while ($currentFiber) {
 
-    completeUnitOfWork($currentFiber);
+    completeUnitOfWork($currentFiber); // 完成
     // 是否有兄弟fiber？
     if ($currentFiber.sibling) {
       return $currentFiber.sibling; // 返回当前fiber的兄弟fiber作为下一个任务执行
     }
-    $currentFiber = $currentFiber.return;
+    $currentFiber = $currentFiber.return; // 该节点没有兄弟节点 向上回到父节点 父节点会继续while循环
   }
 }
 
@@ -310,6 +310,18 @@ function commitDeletion(currentFiber, returnDom) {
  *
 */
 
+
+// hooks在函数组件执行 fiber创建的时候 已经以链表的形式初始化好了 所有hooks组成一个链表 挂载到fiber上
+// 当hooks state更新的时候 会讲更新加入到hook的更新队列 并触发协调 开始更新。
+// 当函数再次执行的时候, 会依次执行hooks链表里的hook, 并执行更新队列
+// 如果此时存在对hooks顺序的更改，react是不会知道的 他会按顺序执行链表  并返回其state和dispatch
+// hook1 hook2 hook3
+// const hook1 => {state1， dispatch1}
+// const hook2 => {state2， dispatch2}
+// const hook3 => {state3， dispatch3}
+// 更改为 hook1  hook3
+// const hook1 => {state1， dispatch1}
+// const hook3 => {state2， dispatch2}
 export function useReducer(reducer, initialValue) {
   //
   let currentHook = workInProgressFiber && workInProgressFiber.alternate && workInProgressFiber.alternate.hooks && workInProgressFiber.alternate.hooks[hookIndex];

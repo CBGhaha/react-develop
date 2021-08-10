@@ -198,6 +198,7 @@ class ReactNativeUnit extends Unit {
         $(`[react-id="${this.id}"]`).removeAttr(propsName);
       }
       if (/on[A-Z]/.test(propsName)) {
+        const eventName = propsName.slice(2).toLowerCase();
         $(document).undelegate(`[ react-id="${this.id}"]`, eventName);
       }
     }

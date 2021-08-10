@@ -3,7 +3,7 @@
 
 import React from './react-17.0.2/packages/react';
 import ReactDOM from './react-17.0.2/packages/react-dom';
-console.log('debug');
+console.log('debug', ReactDOM);
 // import React from '../../react-17.0.2/packages/react';
 // import ReactDom from '../../react-17.0.2/packages/react-dom';
 // import React from '../../react-17.0.2/build/node_modules/react';
